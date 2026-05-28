@@ -1,65 +1,256 @@
-import Image from "next/image";
+"use client";
 
-export default function Home() {
+import { useState } from "react";
+
+export default function HomePage() {
+  const [plate, setPlate] = useState("");
+  const [vehicle, setVehicle] = useState<any>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+
+  const [history, setHistory] = useState<string[]>([]);
+
+  const [fullName, setFullName] = useState("");
+  const [dni, setDni] = useState("");
+  const [whatsapp, setWhatsapp] = useState("");
+  const [email, setEmail] = useState("");
+
+  const handleSearch = async () => {
+    if (!plate) return;
+
+    setLoading(true);
+    setError("");
+    setVehicle(null);
+
+    try {
+      const response = await fetch(`/api/vehicle/${plate}`);
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || "Error");
+      }
+
+      setVehicle(data);
+
+      setHistory((prev) =>
+        [plate, ...prev.filter((p) => p !== plate)].slice(0, 5)
+      );
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleLeadSubmit = async () => {
+    try {
+      const response = await fetch("/api/leads", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          plate,
+          fullName,
+          dni,
+          whatsapp,
+          email,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error);
+      }
+
+      alert("Cotización solicitada correctamente");
+
+      setFullName("");
+      setDni("");
+      setWhatsapp("");
+      setEmail("");
+    } catch (error) {
+      alert("Error guardando lead");
+    }
+  };
+
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
-        </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
+    <main className="min-h-screen bg-zinc-950 text-white flex items-center justify-center px-4">
+      <div className="w-full max-w-2xl">
+        <h1 className="text-5xl font-bold mb-3 text-center">
+          Vehicle Lookup AR
+        </h1>
+
+        <p className="text-zinc-400 text-center mb-8">
+          Buscar información de vehículos por patente
+        </p>
+
+        <div className="flex gap-2 mb-8">
+          <input
+            type="text"
+            placeholder="AA123BB"
+            value={plate}
+            onChange={(e) =>
+              setPlate(
+                e.target.value
+                  .toUpperCase()
+                  .replace(/[^A-Z0-9]/g, "")
+              )
+            }
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                handleSearch();
+              }
+            }}
+            maxLength={7}
+            className="flex-1 bg-zinc-900 border border-zinc-700 rounded-2xl px-4 py-4 text-xl uppercase outline-none"
+          />
+
+          <button
+            onClick={handleSearch}
+            className="bg-white text-black px-6 rounded-2xl font-semibold hover:opacity-90"
           >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
+            {loading ? "Buscando..." : "Buscar"}
+          </button>
         </div>
-      </main>
-    </div>
+
+        {loading && (
+          <div className="text-center text-zinc-400">
+            Buscando vehículo...
+          </div>
+        )}
+
+        {error && (
+          <div className="bg-red-500/10 border border-red-500 text-red-400 rounded-2xl p-4 mb-6">
+            {error}
+          </div>
+        )}
+
+        {history.length > 0 && (
+          <div className="mb-6">
+            <p className="text-zinc-400 mb-2 text-sm">
+              Búsquedas recientes
+            </p>
+
+            <div className="flex flex-wrap gap-2">
+              {history.map((item) => (
+                <button
+                  key={item}
+                  onClick={() => {
+                    setPlate(item);
+                  }}
+                  className="bg-zinc-800 hover:bg-zinc-700 transition px-3 py-2 rounded-xl text-sm"
+                >
+                  {item}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {vehicle && (
+          <>
+            <div className="bg-zinc-900 border border-zinc-800 rounded-3xl p-8">
+              <div className="mb-6">
+                <h2 className="text-3xl font-bold">
+                  {vehicle.brand} {vehicle.model}
+                </h2>
+
+                <p className="text-zinc-400 text-lg">
+                  {vehicle.version}
+                </p>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="bg-zinc-800 rounded-2xl p-4">
+                  <p className="text-zinc-400 text-sm">Año</p>
+                  <p className="text-xl font-semibold">
+                    {vehicle.year}
+                  </p>
+                </div>
+
+                <div className="bg-zinc-800 rounded-2xl p-4">
+                  <p className="text-zinc-400 text-sm">
+                    Combustible
+                  </p>
+                  <p className="text-xl font-semibold">
+                    {vehicle.fuel}
+                  </p>
+                </div>
+
+                <div className="bg-zinc-800 rounded-2xl p-4">
+                  <p className="text-zinc-400 text-sm">Tipo</p>
+                  <p className="text-xl font-semibold">
+                    {vehicle.type}
+                  </p>
+                </div>
+
+                <div className="bg-zinc-800 rounded-2xl p-4">
+                  <p className="text-zinc-400 text-sm">
+                    Transmisión
+                  </p>
+                  <p className="text-xl font-semibold">
+                    {vehicle.transmission}
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div className="mt-8 bg-zinc-900 border border-zinc-800 rounded-3xl p-8">
+              <h3 className="text-2xl font-bold mb-6">
+                Solicitar cotización
+              </h3>
+
+              <div className="grid gap-4">
+                <input
+                  type="text"
+                  placeholder="Nombre y apellido"
+                  value={fullName}
+                  onChange={(e) =>
+                    setFullName(e.target.value)
+                  }
+                  className="bg-zinc-800 border border-zinc-700 rounded-2xl px-4 py-4 outline-none"
+                />
+
+                <input
+                  type="text"
+                  placeholder="DNI"
+                  value={dni}
+                  onChange={(e) => setDni(e.target.value)}
+                  className="bg-zinc-800 border border-zinc-700 rounded-2xl px-4 py-4 outline-none"
+                />
+
+                <input
+                  type="text"
+                  placeholder="WhatsApp"
+                  value={whatsapp}
+                  onChange={(e) =>
+                    setWhatsapp(e.target.value)
+                  }
+                  className="bg-zinc-800 border border-zinc-700 rounded-2xl px-4 py-4 outline-none"
+                />
+
+                <input
+                  type="email"
+                  placeholder="Email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className="bg-zinc-800 border border-zinc-700 rounded-2xl px-4 py-4 outline-none"
+                />
+
+                <button
+                  onClick={handleLeadSubmit}
+                  className="bg-white text-black py-4 rounded-2xl font-semibold hover:opacity-90 transition"
+                >
+                  Solicitar cotización
+                </button>
+              </div>
+            </div>
+          </>
+        )}
+      </div>
+    </main>
   );
 }
