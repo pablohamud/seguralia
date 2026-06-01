@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { supabase } from "./lib/supabase";
+
 export default function HomePage() {
   const [plate, setPlate] = useState("");
   const [vehicle, setVehicle] = useState<any>(null);
@@ -43,41 +44,22 @@ export default function HomePage() {
     }
   };
 
-const handleLeadSubmit = async () => {
-  try {
-    const { error } = await supabase
-      .from("leads")
-      .insert([
-        {
-          plate,
-          full_name: fullName,
-          dni,
-          whatsapp,
-          email,
-        },
-      ]);
+  const handleLeadSubmit = async () => {
+    try {
+      const { error } = await supabase
+        .from("leads")
+        .insert([
+          {
+            plate,
+            full_name: fullName,
+            dni,
+            whatsapp,
+            email,
+          },
+        ]);
 
-    if (error) {
-      throw error;
-    }
-
-    alert("Cotización solicitada correctamente");
-
-    setFullName("");
-    setDni("");
-    setWhatsapp("");
-    setEmail("");
-  } catch (error) {
-    console.error(error);
-
-    alert("Error guardando lead");
-  }
-};
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error);
+      if (error) {
+        throw error;
       }
 
       alert("Cotización solicitada correctamente");
@@ -87,6 +69,7 @@ const handleLeadSubmit = async () => {
       setWhatsapp("");
       setEmail("");
     } catch (error) {
+      console.error(error);
       alert("Error guardando lead");
     }
   };
