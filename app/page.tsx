@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-
+import { supabase } from "./lib/supabase";
 export default function HomePage() {
   const [plate, setPlate] = useState("");
   const [vehicle, setVehicle] = useState<any>(null);
@@ -43,21 +43,36 @@ export default function HomePage() {
     }
   };
 
-  const handleLeadSubmit = async () => {
-    try {
-      const response = await fetch("/api/leads", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
+const handleLeadSubmit = async () => {
+  try {
+    const { error } = await supabase
+      .from("leads")
+      .insert([
+        {
           plate,
-          fullName,
+          full_name: fullName,
           dni,
           whatsapp,
           email,
-        }),
-      });
+        },
+      ]);
+
+    if (error) {
+      throw error;
+    }
+
+    alert("Cotización solicitada correctamente");
+
+    setFullName("");
+    setDni("");
+    setWhatsapp("");
+    setEmail("");
+  } catch (error) {
+    console.error(error);
+
+    alert("Error guardando lead");
+  }
+};
 
       const data = await response.json();
 
