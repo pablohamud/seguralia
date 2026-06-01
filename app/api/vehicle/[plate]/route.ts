@@ -9,7 +9,7 @@ export async function GET(
 
   try {
     const response = await fetch(
-      `https://clasific.ar/api/v1/vehicles/basic?plate=${normalizedPlate}&classification=true`,
+      `https://api.clasific.ar/v1/vehicles/basic?plate=${normalizedPlate}&classification=true`,
       {
         headers: {
           "x-api-key": process.env.CLASIFIC_API_KEY || "",
