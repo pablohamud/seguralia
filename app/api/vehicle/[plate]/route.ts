@@ -14,7 +14,7 @@ export async function GET(
       `https://api.clasific.ar/v1/vehicles/basic?plate=${normalizedPlate}&classification=true`,
       {
         headers: {
-          "x-api-key": process.env.CLASIFIC_API_KEY || "",
+          "x-api-key": "clk_WS7b4WjHVvfNlQ0b1cP3UmG7Ij35bsAPxSc0WMzG9hE",
         },
       }
     );
