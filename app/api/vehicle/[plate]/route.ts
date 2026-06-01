@@ -10,6 +10,7 @@ export async function GET(
   try {
     const response = await fetch(
       `https://api.clasific.ar/v1/vehicles/basic?plate=${normalizedPlate}&classification=true`,
+      console.log("API KEY:", process.env.CLASIFIC_API_KEY ? "existe" : "VACÍA");
       {
         headers: {
           "x-api-key": process.env.CLASIFIC_API_KEY || "",
