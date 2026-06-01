@@ -27,14 +27,14 @@ export async function GET(
     }
 
     return NextResponse.json({
-      brand: data.brand,
-      model: data.model,
-      version: data.version,
-      year: data.year,
-      fuel: data.fuel,
-      type: data.classification?.vehicle_type || data.type,
-      transmission: data.transmission,
-    });
+  brand: data.data.make,
+  model: data.data.model,
+  version: data.data.classification?.matchedModel || "",
+  year: data.data.year,
+  fuel: "",
+  type: data.data.classification?.bodyType || "",
+  transmission: "",
+});
   } catch (error) {
     return NextResponse.json(
       { error: "Error al consultar la API" },
