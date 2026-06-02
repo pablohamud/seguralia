@@ -45,22 +45,54 @@ export default function HomePage() {
   };
 
   const handleLeadSubmit = async () => {
-    try {
-      const { error } = await supabase
-        .from("leads")
-        .insert([
-          {
-            plate,
-            full_name: fullName,
-            dni,
-            whatsapp,
-            email,
-          },
-        ]);
+  if (!fullName.trim()) {
+    alert("Por favor ingresá tu nombre y apellido");
+    return;
+  }
 
-      if (error) {
-        throw error;
-      }
+  if (!/^\d{7,8}$/.test(dni)) {
+    alert("El DNI debe tener 7 u 8 números");
+    return;
+  }
+
+  if (!/^\d{10,11}$/.test(whatsapp.replace(/\s/g, ""))) {
+    alert("El WhatsApp debe tener 10 u 11 números");
+    return;
+  }
+
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    alert("El email no es válido");
+    return;
+  }
+
+  try {
+    const { error } = await supabase
+      .from("leads")
+      .insert([
+        {
+          plate,
+          full_name: fullName,
+          dni,
+          whatsapp,
+          email,
+        },
+      ]);
+
+    if (error) {
+      throw error;
+    }
+
+    alert("Cotización solicitada correctamente");
+
+    setFullName("");
+    setDni("");
+    setWhatsapp("");
+    setEmail("");
+  } catch (error) {
+    console.error(error);
+    alert("Error guardando lead");
+  }
+};
 
       alert("Cotización solicitada correctamente");
 
