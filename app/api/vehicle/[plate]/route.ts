@@ -8,40 +8,33 @@ export async function GET(
   const normalizedPlate = plate.toUpperCase();
 
   console.log("API KEY:", process.env.CLASIFIC_API_KEY ? "existe" : "VACÍA");
-
-  try {
-    const response = await fetch(
-      `https://api.clasific.ar/v1/vehicles/basic?plate=${normalizedPlate}&classification=true`,
-      {
-        headers: {
-          "x-api-key": "clk_WS7b4WjHVvfNlQ0b1cP3UmG7Ij35bsAPxSc0WMzG9hE",
-        },
-      }
-    );
-
-    const data = await response.json();
-
-    if (!response.ok) {
-      return NextResponse.json(
-        { error: "Vehículo no encontrado" },
-        { status: 404 }
-      );
+try {
+  const response = await fetch(
+    `https://api.clasific.ar/v1/vehicles/basic?plate=${normalizedPlate}&classification=true`,
+    {
+      headers: {
+        Authorization: `Bearer ${process.env.CLASIFIC_API_KEY}`,
+      },
     }
+  );
 
-    return NextResponse.json({
-      brand: data.data.make,
-      model: data.data.model,
-      version: data.data.classification?.matchedModel || "",
-      year: data.data.year,
-      fuel: "",
-      type: data.data.classification?.bodyType || "",
-      transmission: "",
-    });
-  } catch (error) {
-    console.error("Error:", error);
-    return NextResponse.json(
-      { error: "Error al consultar la API" },
-      { status: 500 }
-    );
-  }
+  console.log("STATUS:", response.status);
+
+  const text = await response.text();
+
+  console.log("BODY:", text);
+
+  // TEMPORAL PARA DEBUG
+  return NextResponse.json({
+    status: response.status,
+    body: text,
+  });
+
+} catch (error) {
+  console.error("Error:", error);
+
+  return NextResponse.json(
+    { error: "Error al consultar la API" },
+    { status: 500 }
+  );
 }
