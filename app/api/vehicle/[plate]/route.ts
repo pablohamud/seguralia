@@ -12,7 +12,7 @@ export async function GET(
       `https://api.clasific.ar/v1/vehicles/basic?plate=${normalizedPlate}&classification=true`,
       {
         headers: {
-          Authorization: `Bearer ${process.env.CLASIFIC_API_KEY}`,
+          "x-api-key": process.env.CLASIFIC_API_KEY || "",
         },
       }
     );
@@ -37,7 +37,6 @@ export async function GET(
     });
   } catch (error) {
     console.error("Error:", error);
-
     return NextResponse.json(
       { error: "Error al consultar la API" },
       { status: 500 }
