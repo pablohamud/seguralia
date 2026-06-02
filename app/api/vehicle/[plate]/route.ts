@@ -20,6 +20,8 @@ export async function GET(
     const data = await response.json();
 
     if (!response.ok) {
+      const rayId = response.headers.get("cf-ray") || "no disponible";
+      console.error("403 - CF-Ray:", rayId);
       return NextResponse.json(
         { error: "Vehículo no encontrado" },
         { status: 404 }
