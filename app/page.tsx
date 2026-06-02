@@ -1,149 +1,186 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { supabase } from "../lib/supabase";
+import { useState } from "react";
+import { supabase } from "./lib/supabase";
 
-const PASSWORD = "dWens@34";
-
-export default function AdminPage() {
-  const [password, setPassword] = useState("");
-  const [authenticated, setAuthenticated] = useState(false);
-  const [leads, setLeads] = useState<any[]>([]);
+export default function HomePage() {
+  const [plate, setPlate] = useState("");
+  const [vehicle, setVehicle] = useState<any>(null);
   const [loading, setLoading] = useState(false);
-  const [search, setSearch] = useState("");
+  const [error, setError] = useState("");
+  const [history, setHistory] = useState<string[]>([]);
+  const [fullName, setFullName] = useState("");
+  const [dni, setDni] = useState("");
+  const [whatsapp, setWhatsapp] = useState("");
+  const [email, setEmail] = useState("");
 
-  const handleLogin = () => {
-    if (password === PASSWORD) {
-      setAuthenticated(true);
-    } else {
-      alert("Contraseña incorrecta");
+  const handleSearch = async () => {
+    if (!plate) return;
+    setLoading(true);
+    setError("");
+    setVehicle(null);
+    try {
+      const response = await fetch(`/api/vehicle/${plate}`);
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || "Error");
+      setVehicle(data);
+      setHistory((prev) =>
+        [plate, ...prev.filter((p) => p !== plate)].slice(0, 5)
+      );
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
     }
   };
 
-  const fetchLeads = async () => {
-    setLoading(true);
-    const { data, error } = await supabase
-      .from("leads")
-      .select("*")
-      .order("id", { ascending: false });
-    if (!error) setLeads(data || []);
-    setLoading(false);
+  const handleLeadSubmit = async () => {
+    if (!fullName.trim()) {
+      alert("Por favor ingresá tu nombre y apellido");
+      return;
+    }
+    if (!/^\d{7,8}$/.test(dni)) {
+      alert("El DNI debe tener 7 u 8 números");
+      return;
+    }
+    if (!/^\d{10,11}$/.test(whatsapp.replace(/\s/g, ""))) {
+      alert("El WhatsApp debe tener 10 u 11 números");
+      return;
+    }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      alert("El email no es válido");
+      return;
+    }
+    try {
+      const { error } = await supabase
+        .from("leads")
+        .insert([{ plate, full_name: fullName, dni, whatsapp, email }]);
+      if (error) throw error;
+      alert("Cotización solicitada correctamente");
+      setFullName("");
+      setDni("");
+      setWhatsapp("");
+      setEmail("");
+    } catch (error) {
+      console.error(error);
+      alert("Error guardando lead");
+    }
   };
-
-  const exportCSV = () => {
-    const headers = ["ID", "Patente", "Nombre", "DNI", "WhatsApp", "Email", "Fecha"];
-    const rows = leads.map((l) => [
-      l.id, l.plate, l.full_name, l.dni, l.whatsapp, l.email,
-      l.created_at ? new Date(l.created_at).toLocaleString("es-AR") : "",
-    ]);
-    const csv = [headers, ...rows].map((r) => r.join(",")).join("\n");
-    const blob = new Blob([csv], { type: "text/csv" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = "leads.csv";
-    a.click();
-  };
-
-  const filteredLeads = leads.filter((l) =>
-    [l.plate, l.full_name, l.dni].some((v) =>
-      v?.toLowerCase().includes(search.toLowerCase())
-    )
-  );
-
-  useEffect(() => {
-    if (authenticated) fetchLeads();
-  }, [authenticated]);
-
-  if (!authenticated) {
-    return (
-      <main className="min-h-screen bg-zinc-950 text-white flex items-center justify-center px-4">
-        <div className="w-full max-w-sm bg-zinc-900 border border-zinc-800 rounded-3xl p-8">
-          <h1 className="text-2xl font-bold mb-6 text-center">Panel Admin</h1>
-          <input
-            type="password"
-            placeholder="Contraseña"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            onKeyDown={(e) => { if (e.key === "Enter") handleLogin(); }}
-            className="w-full bg-zinc-800 border border-zinc-700 rounded-2xl px-4 py-4 outline-none mb-4"
-          />
-          <button
-            onClick={handleLogin}
-            className="w-full bg-white text-black py-4 rounded-2xl font-semibold hover:opacity-90 transition"
-          >
-            Ingresar
-          </button>
-        </div>
-      </main>
-    );
-  }
 
   return (
-    <main className="min-h-screen bg-zinc-950 text-white px-4 py-8">
-      <div className="max-w-6xl mx-auto">
-        <div className="flex justify-between items-center mb-4">
-          <div>
-            <h1 className="text-3xl font-bold">Leads</h1>
-            <p className="text-zinc-400 text-sm mt-1">{leads.length} leads en total</p>
-          </div>
-          <div className="flex gap-2">
-            <button
-              onClick={fetchLeads}
-              className="bg-zinc-800 hover:bg-zinc-700 px-4 py-2 rounded-xl text-sm transition"
-            >
-              Actualizar
-            </button>
-            <button
-              onClick={exportCSV}
-              className="bg-white text-black px-4 py-2 rounded-xl text-sm font-semibold hover:opacity-90 transition"
-            >
-              Exportar CSV
-            </button>
-          </div>
+    <main className="min-h-screen bg-zinc-950 text-white flex items-center justify-center px-4">
+      <div className="w-full max-w-2xl">
+        <h1 className="text-5xl font-bold mb-3 text-center">Vehicle Lookup AR</h1>
+        <p className="text-zinc-400 text-center mb-8">
+          Buscar información de vehículos por patente
+        </p>
+        <div className="flex gap-2 mb-8">
+          <input
+            type="text"
+            placeholder="AA123BB"
+            value={plate}
+            onChange={(e) =>
+              setPlate(e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, ""))
+            }
+            onKeyDown={(e) => { if (e.key === "Enter") handleSearch(); }}
+            maxLength={7}
+            className="flex-1 bg-zinc-900 border border-zinc-700 rounded-2xl px-4 py-4 text-xl uppercase outline-none"
+          />
+          <button
+            onClick={handleSearch}
+            className="bg-white text-black px-6 rounded-2xl font-semibold hover:opacity-90"
+          >
+            {loading ? "Buscando..." : "Buscar"}
+          </button>
         </div>
-        <input
-          type="text"
-          placeholder="Buscar por patente, nombre o DNI..."
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          className="w-full bg-zinc-900 border border-zinc-800 rounded-2xl px-4 py-3 outline-none mb-6 text-sm"
-        />
-        {loading ? (
-          <p className="text-zinc-400">Cargando...</p>
-        ) : filteredLeads.length === 0 ? (
-          <p className="text-zinc-400">No hay leads.</p>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="text-zinc-400 border-b border-zinc-800">
-                  <th className="text-left py-3 pr-4">Patente</th>
-                  <th className="text-left py-3 pr-4">Nombre</th>
-                  <th className="text-left py-3 pr-4">DNI</th>
-                  <th className="text-left py-3 pr-4">WhatsApp</th>
-                  <th className="text-left py-3 pr-4">Email</th>
-                  <th className="text-left py-3">Fecha</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filteredLeads.map((lead) => (
-                  <tr key={lead.id} className="border-b border-zinc-800 hover:bg-zinc-900 transition">
-                    <td className="py-3 pr-4 font-mono">{lead.plate}</td>
-                    <td className="py-3 pr-4">{lead.full_name}</td>
-                    <td className="py-3 pr-4">{lead.dni}</td>
-                    <td className="py-3 pr-4">{lead.whatsapp}</td>
-                    <td className="py-3 pr-4">{lead.email}</td>
-                    <td className="py-3 text-zinc-400">
-                      {lead.created_at
-                        ? new Date(lead.created_at).toLocaleString("es-AR")
-                        : "-"}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+        {loading && <div className="text-center text-zinc-400">Buscando vehículo...</div>}
+        {error && (
+          <div className="bg-red-500/10 border border-red-500 text-red-400 rounded-2xl p-4 mb-6">
+            {error}
           </div>
+        )}
+        {history.length > 0 && (
+          <div className="mb-6">
+            <p className="text-zinc-400 mb-2 text-sm">Búsquedas recientes</p>
+            <div className="flex flex-wrap gap-2">
+              {history.map((item) => (
+                <button
+                  key={item}
+                  onClick={() => setPlate(item)}
+                  className="bg-zinc-800 hover:bg-zinc-700 transition px-3 py-2 rounded-xl text-sm"
+                >
+                  {item}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+        {vehicle && (
+          <>
+            <div className="bg-zinc-900 border border-zinc-800 rounded-3xl p-8">
+              <div className="mb-6">
+                <h2 className="text-3xl font-bold">{vehicle.brand} {vehicle.model}</h2>
+                <p className="text-zinc-400 text-lg">{vehicle.version}</p>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="bg-zinc-800 rounded-2xl p-4">
+                  <p className="text-zinc-400 text-sm">Año</p>
+                  <p className="text-xl font-semibold">{vehicle.year}</p>
+                </div>
+                <div className="bg-zinc-800 rounded-2xl p-4">
+                  <p className="text-zinc-400 text-sm">Combustible</p>
+                  <p className="text-xl font-semibold">{vehicle.fuel}</p>
+                </div>
+                <div className="bg-zinc-800 rounded-2xl p-4">
+                  <p className="text-zinc-400 text-sm">Tipo</p>
+                  <p className="text-xl font-semibold">{vehicle.type}</p>
+                </div>
+                <div className="bg-zinc-800 rounded-2xl p-4">
+                  <p className="text-zinc-400 text-sm">Transmisión</p>
+                  <p className="text-xl font-semibold">{vehicle.transmission}</p>
+                </div>
+              </div>
+            </div>
+            <div className="mt-8 bg-zinc-900 border border-zinc-800 rounded-3xl p-8">
+              <h3 className="text-2xl font-bold mb-6">Solicitar cotización</h3>
+              <div className="grid gap-4">
+                <input
+                  type="text"
+                  placeholder="Nombre y apellido"
+                  value={fullName}
+                  onChange={(e) => setFullName(e.target.value)}
+                  className="bg-zinc-800 border border-zinc-700 rounded-2xl px-4 py-4 outline-none"
+                />
+                <input
+                  type="text"
+                  placeholder="DNI"
+                  value={dni}
+                  onChange={(e) => setDni(e.target.value)}
+                  className="bg-zinc-800 border border-zinc-700 rounded-2xl px-4 py-4 outline-none"
+                />
+                <input
+                  type="text"
+                  placeholder="WhatsApp"
+                  value={whatsapp}
+                  onChange={(e) => setWhatsapp(e.target.value)}
+                  className="bg-zinc-800 border border-zinc-700 rounded-2xl px-4 py-4 outline-none"
+                />
+                <input
+                  type="email"
+                  placeholder="Email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className="bg-zinc-800 border border-zinc-700 rounded-2xl px-4 py-4 outline-none"
+                />
+                <button
+                  onClick={handleLeadSubmit}
+                  className="bg-white text-black py-4 rounded-2xl font-semibold hover:opacity-90 transition"
+                >
+                  Solicitar cotización
+                </button>
+              </div>
+            </div>
+          </>
         )}
       </div>
     </main>
