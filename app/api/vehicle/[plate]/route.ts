@@ -7,11 +7,6 @@ export async function GET(
   const { plate } = await params;
   const normalizedPlate = plate.toUpperCase();
 
-  console.log(
-    "API KEY:",
-    process.env.CLASIFIC_API_KEY ? "existe" : "VACÍA"
-  );
-
   try {
     const response = await fetch(
       `https://api.clasific.ar/v1/vehicles/basic?plate=${normalizedPlate}&classification=true`,
@@ -22,16 +17,23 @@ export async function GET(
       }
     );
 
-    console.log("STATUS:", response.status);
+    const data = await response.json();
 
-    const text = await response.text();
+    if (!response.ok) {
+      return NextResponse.json(
+        { error: "Vehículo no encontrado" },
+        { status: 404 }
+      );
+    }
 
-    console.log("BODY:", text);
-
-    // TEMPORAL PARA DEBUG
     return NextResponse.json({
-      status: response.status,
-      body: text,
+      brand: data.data.make,
+      model: data.data.model,
+      version: data.data.classification?.matchedModel || "",
+      year: data.data.year,
+      fuel: "",
+      type: data.data.classification?.bodyType || "",
+      transmission: "",
     });
   } catch (error) {
     console.error("Error:", error);
