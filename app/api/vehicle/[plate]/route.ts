@@ -17,13 +17,16 @@ export async function GET(
       }
     );
 
+    const rayId = response.headers.get("cf-ray") || "no disponible";
+    const status = response.status;
+
+    console.log(`CF-Ray: ${rayId} | Status: ${status} | Plate: ${normalizedPlate}`);
+
     const data = await response.json();
 
     if (!response.ok) {
-      const rayId = response.headers.get("cf-ray") || "no disponible";
-      console.error("403 - CF-Ray:", rayId);
       return NextResponse.json(
-        { error: "Vehículo no encontrado" },
+        { error: "Vehículo no encontrado", rayId },
         { status: 404 }
       );
     }
