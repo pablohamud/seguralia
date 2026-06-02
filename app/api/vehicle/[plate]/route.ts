@@ -19,10 +19,10 @@ export async function GET(
 
     const rayId = response.headers.get("cf-ray") || "no disponible";
     const status = response.status;
-
     console.log(`CF-Ray: ${rayId} | Status: ${status} | Plate: ${normalizedPlate}`);
 
-    const data = await response.json();
+    const text = await response.text();
+    console.log("Response body:", text.substring(0, 200));
 
     if (!response.ok) {
       return NextResponse.json(
@@ -30,6 +30,8 @@ export async function GET(
         { status: 404 }
       );
     }
+
+    const data = JSON.parse(text);
 
     return NextResponse.json({
       brand: data.data.make,
